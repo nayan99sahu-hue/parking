@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authAPI } from '../services/api';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -9,42 +9,34 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('parchi_token');
-    const savedUser = localStorage.getItem('parchi_user');
-    if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
-      authAPI.getMe().then(res => {
-        setUser(res.data.user);
-        localStorage.setItem('parchi_user', JSON.stringify(res.data.user));
-      }).catch(() => logout()).finally(() => setLoading(false));
+    if (token) {
+      api.get('/auth/me')
+        .then(res => setUser(res.data.user))
+        .catch(() => localStorage.removeItem('parchi_token'))
+        .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
   }, []);
 
   const login = async (email, password) => {
-    const res = await authAPI.login({ email, password });
-    const { token, user } = res.data;
-    localStorage.setItem('parchi_token', token);
-    localStorage.setItem('parchi_user', JSON.stringify(user));
-    setUser(user);
-    return user;
+    const res = await api.post('/auth/login', { email, password });
+    localStorage.setItem('parchi_token', res.data.token);
+    setUser(res.data.user);
+    return res.data.user;
   };
 
-  const logout = useCallback(() => {
+  const logout = () => {
     localStorage.removeItem('parchi_token');
     localStorage.removeItem('parchi_user');
     setUser(null);
-  }, []);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, isAdmin: user?.role === 'admin' }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
-  return ctx;
-};
+export const useAuth = () => useContext(AuthContext);

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || '/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 const api = axios.create({ baseURL: API_URL });
 
@@ -45,13 +45,29 @@ export const parchiTypesAPI = {
 
 export const ticketsAPI = {
   create: (data) => api.post('/tickets', data),
+  createBatch: (data) => api.post('/tickets/batch', data),
   getAll: (params) => api.get('/tickets', { params }),
+};
+
+export const membershipTypesAPI = {
+  getAll: () => api.get('/membership-types'),
+  create: (data) => api.post('/membership-types', data),
+  update: (id, data) => api.put(`/membership-types/${id}`, data),
+  toggle: (id) => api.patch(`/membership-types/${id}/toggle`),
+  delete: (id) => api.delete(`/membership-types/${id}`),
+};
+
+export const membershipsAPI = {
+  getAll: (params) => api.get('/memberships', { params }),
+  create: (data) => api.post('/memberships', data),
 };
 
 export const reportsAPI = {
   getDashboard: () => api.get('/reports/dashboard'),
   getOperators: () => api.get('/reports/operators'),
   getDaily: (params) => api.get('/reports/daily', { params }),
+  getShift: (params) => api.get('/reports/shift', { params }),
+  getBatch: (params) => api.get('/reports/batch', { params }),
 };
 
 export default api;

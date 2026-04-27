@@ -8,6 +8,8 @@ const userRoutes = require('./routes/users');
 const parchiTypeRoutes = require('./routes/parchiTypes');
 const ticketRoutes = require('./routes/tickets');
 const reportRoutes = require('./routes/reports');
+const membershipRoutes = require('./routes/memberships');
+const membershipTypeRoutes = require('./routes/membershipTypes');
 
 const app = express();
 
@@ -21,6 +23,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/parchi-types', parchiTypeRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/memberships', membershipRoutes);
+app.use('/api/membership-types', membershipTypeRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
