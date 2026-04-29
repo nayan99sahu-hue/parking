@@ -5,14 +5,23 @@ const { v4: uuidv4 } = require('uuid');
 // Batch create tickets from serial range
 exports.createBatchTickets = async (req, res) => {
   try {
-    const { entries, shift } = req.body;
-    // entries: [{ parchiTypeId, fromSerial, toSerial }]
+    const { entries, shift, workDate } = req.body;
 
     if (!entries || !Array.isArray(entries) || entries.length === 0) {
       return res.status(400).json({ success: false, message: 'Entries array required' });
     }
     if (!shift) {
       return res.status(400).json({ success: false, message: 'Shift is required' });
+    }
+    if (!workDate) {
+      return res.status(400).json({ success: false, message: 'Work date is required' });
+    }
+    // Validate date format yyyy-mm-dd
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(workDate)) {
+      return res.status(400).json({ success: false, message: 'Work date must be in yyyy-mm-dd format' });
+    }
+    if (!['Morning', 'Night'].includes(shift)) {
+      return res.status(400).json({ success: false, message: 'Shift must be Morning or Night' });
     }
 
     const batchId = uuidv4();
@@ -54,6 +63,7 @@ exports.createBatchTickets = async (req, res) => {
           operatorId: req.user._id,
           operatorName: req.user.name,
           shift,
+          workDate,
           batchId,
         });
       }
@@ -70,7 +80,6 @@ exports.createBatchTickets = async (req, res) => {
       });
     }
 
-    // Insert all tickets (will throw on duplicate serial)
     await Ticket.insertMany(allTickets, { ordered: false });
 
     const grandTotal = summary.reduce((sum, s) => sum + s.totalAmount, 0);
@@ -81,6 +90,8 @@ exports.createBatchTickets = async (req, res) => {
       summary,
       grandTotal,
       totalTickets: allTickets.length,
+      workDate,
+      shift,
     });
   } catch (err) {
     if (err.code === 11000) {
@@ -92,7 +103,7 @@ exports.createBatchTickets = async (req, res) => {
 
 exports.getTickets = async (req, res) => {
   try {
-    const { page = 1, limit = 20, operatorId, parchiTypeId, startDate, endDate, shift } = req.query;
+    const { page = 1, limit = 20, operatorId, parchiTypeId, startDate, endDate, shift, workDate } = req.query;
     const filter = {};
 
     if (req.user.role === 'operator') filter.operatorId = req.user._id;
@@ -100,19 +111,19 @@ exports.getTickets = async (req, res) => {
 
     if (parchiTypeId) filter.parchiTypeId = parchiTypeId;
     if (shift) filter.shift = shift;
-    if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        filter.createdAt.$lte = end;
-      }
+
+    // Filter by workDate (yyyy-mm-dd string) if provided, else fallback to createdAt range
+    if (workDate) {
+      filter.workDate = workDate;
+    } else if (startDate || endDate) {
+      filter.workDate = {};
+      if (startDate) filter.workDate.$gte = startDate;
+      if (endDate) filter.workDate.$lte = endDate;
     }
 
     const total = await Ticket.countDocuments(filter);
     const tickets = await Ticket.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ workDate: -1, createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit))
       .populate('operatorId', 'name email')
@@ -128,7 +139,6 @@ exports.getTickets = async (req, res) => {
   }
 };
 
-// Get batch summary grouped by batchId (useful for reporting)
 exports.getBatchSummary = async (req, res) => {
   try {
     const { startDate, endDate, operatorId, shift } = req.query;
@@ -139,13 +149,9 @@ exports.getBatchSummary = async (req, res) => {
 
     if (shift) match.shift = shift;
     if (startDate || endDate) {
-      match.createdAt = {};
-      if (startDate) match.createdAt.$gte = new Date(startDate);
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        match.createdAt.$lte = end;
-      }
+      match.workDate = {};
+      if (startDate) match.workDate.$gte = startDate;
+      if (endDate) match.workDate.$lte = endDate;
     }
 
     const batches = await Ticket.aggregate([
@@ -155,13 +161,14 @@ exports.getBatchSummary = async (req, res) => {
         parchiTypeName: { $first: '$parchiTypeName' },
         operatorName: { $first: '$operatorName' },
         shift: { $first: '$shift' },
+        workDate: { $first: '$workDate' },
         count: { $sum: 1 },
         revenue: { $sum: '$amount' },
         minSerial: { $min: '$serialIndex' },
         maxSerial: { $max: '$serialIndex' },
         date: { $first: '$createdAt' },
       }},
-      { $sort: { date: -1 } }
+      { $sort: { workDate: -1, date: -1 } }
     ]);
 
     res.json({ success: true, data: batches });

@@ -3,10 +3,18 @@ const MembershipType = require('../models/MembershipType');
 
 exports.createMembership = async (req, res) => {
   try {
-    const { memberName, contactNumber, vehicleNumber, vehicleType, membershipTypeId, startDate, shift } = req.body;
+    const { memberName, contactNumber, vehicleNumber, vehicleType, membershipTypeId, startDate, shift, workDate } = req.body;
 
-    if (!memberName || !contactNumber || !vehicleNumber || !vehicleType || !membershipTypeId || !startDate || !shift) {
+    if (!memberName || !contactNumber || !vehicleNumber || !vehicleType || !membershipTypeId || !startDate || !shift || !workDate) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    if (!['Morning', 'Night'].includes(shift)) {
+      return res.status(400).json({ success: false, message: 'Shift must be Morning or Night' });
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(workDate)) {
+      return res.status(400).json({ success: false, message: 'Work date must be in yyyy-mm-dd format' });
     }
 
     const membershipType = await MembershipType.findOne({ _id: membershipTypeId, isActive: true });
@@ -31,6 +39,7 @@ exports.createMembership = async (req, res) => {
       operatorId: req.user._id,
       operatorName: req.user.name,
       shift,
+      workDate,
     });
 
     res.status(201).json({ success: true, data: membership });
@@ -41,26 +50,26 @@ exports.createMembership = async (req, res) => {
 
 exports.getMemberships = async (req, res) => {
   try {
-    const { page = 1, limit = 20, operatorId, startDate, endDate, shift } = req.query;
+    const { page = 1, limit = 20, operatorId, startDate, endDate, shift, workDate } = req.query;
     const filter = {};
 
     if (req.user.role === 'operator') filter.operatorId = req.user._id;
     else if (operatorId) filter.operatorId = operatorId;
 
     if (shift) filter.shift = shift;
-    if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        filter.createdAt.$lte = end;
-      }
+
+    // Filter by workDate (yyyy-mm-dd string) if provided, else fallback to range
+    if (workDate) {
+      filter.workDate = workDate;
+    } else if (startDate || endDate) {
+      filter.workDate = {};
+      if (startDate) filter.workDate.$gte = startDate;
+      if (endDate) filter.workDate.$lte = endDate;
     }
 
     const total = await Membership.countDocuments(filter);
     const memberships = await Membership.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ workDate: -1, createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit))
       .populate('operatorId', 'name email')

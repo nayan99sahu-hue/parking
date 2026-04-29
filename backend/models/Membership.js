@@ -12,10 +12,12 @@ const membershipSchema = new mongoose.Schema({
   endDate: { type: Date, required: true },
   operatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   operatorName: { type: String, required: true },
-  shift: { type: String, enum: ['Morning', 'Afternoon', 'Evening', 'Night'], required: true },
+  shift: { type: String, enum: ['Morning', 'Night'], required: true },
+  workDate: { type: String, required: true }, // yyyy-mm-dd — the actual work date chosen by operator
 }, { timestamps: true });
 
 membershipSchema.index({ createdAt: -1 });
+membershipSchema.index({ workDate: -1 });
 membershipSchema.index({ operatorId: 1 });
 membershipSchema.index({ contactNumber: 1 });
 

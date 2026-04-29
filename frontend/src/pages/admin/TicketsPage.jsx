@@ -2,13 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ticketsAPI, usersAPI, parchiTypesAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
+const SHIFTS = ['Morning', 'Night'];
+const SHIFT_ICONS = { Morning: '🌅', Night: '🌙' };
+
 export default function TicketsPage() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [operators, setOperators] = useState([]);
   const [parchiTypes, setParchiTypes] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1 });
-  const [filters, setFilters] = useState({ operatorId: '', parchiTypeId: '', startDate: '', endDate: '' });
+  const [filters, setFilters] = useState({ operatorId: '', parchiTypeId: '', startDate: '', endDate: '', shift: '' });
   const [page, setPage] = useState(1);
 
   const load = useCallback(() => {
@@ -36,7 +39,7 @@ export default function TicketsPage() {
 
       {/* Filters */}
       <div className="card">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           <div>
             <label className="label">Operator</label>
             <select className="input" value={filters.operatorId} onChange={e => handleFilter('operatorId', e.target.value)}>
@@ -52,11 +55,18 @@ export default function TicketsPage() {
             </select>
           </div>
           <div>
-            <label className="label">From Date</label>
+            <label className="label">Shift</label>
+            <select className="input" value={filters.shift} onChange={e => handleFilter('shift', e.target.value)}>
+              <option value="">All Shifts</option>
+              {SHIFTS.map(s => <option key={s} value={s}>{SHIFT_ICONS[s]} {s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Work Date From</label>
             <input className="input" type="date" value={filters.startDate} onChange={e => handleFilter('startDate', e.target.value)} />
           </div>
           <div>
-            <label className="label">To Date</label>
+            <label className="label">Work Date To</label>
             <input className="input" type="date" value={filters.endDate} onChange={e => handleFilter('endDate', e.target.value)} />
           </div>
         </div>
@@ -65,8 +75,8 @@ export default function TicketsPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             Search
           </button>
-          <button onClick={() => { setFilters({ operatorId: '', parchiTypeId: '', startDate: '', endDate: '' }); setPage(1); }} className="btn-secondary py-2">
-            Clear Filters
+          <button onClick={() => { setFilters({ operatorId: '', parchiTypeId: '', startDate: '', endDate: '', shift: '' }); setPage(1); }} className="btn-secondary py-2">
+            Clear
           </button>
         </div>
       </div>
@@ -81,7 +91,7 @@ export default function TicketsPage() {
               <table className="w-full">
                 <thead>
                   <tr>
-                    {['#', 'Serial No.', 'Type', 'Amount', 'Operator', 'Date', 'Time'].map(h => (
+                    {['#', 'Serial No.', 'Type', 'Amount', 'Operator', 'Shift', 'Work Date'].map(h => (
                       <th key={h} className="table-th">{h}</th>
                     ))}
                   </tr>
@@ -99,8 +109,12 @@ export default function TicketsPage() {
                       </td>
                       <td className="table-td font-semibold text-green-700 dark:text-green-400">₹{t.amount}</td>
                       <td className="table-td">{t.operatorName}</td>
-                      <td className="table-td text-slate-500">{new Date(t.createdAt).toLocaleDateString('en-IN')}</td>
-                      <td className="table-td text-slate-400">{new Date(t.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</td>
+                      <td className="table-td">
+                        <span className="flex items-center gap-1 text-sm">
+                          {SHIFT_ICONS[t.shift] || '⏰'} {t.shift}
+                        </span>
+                      </td>
+                      <td className="table-td font-mono text-xs text-slate-600 dark:text-slate-300">{t.workDate}</td>
                     </tr>
                   ))}
                   {tickets.length === 0 && (
@@ -110,7 +124,6 @@ export default function TicketsPage() {
               </table>
             </div>
 
-            {/* Pagination */}
             {pagination.pages > 1 && (
               <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-700">
                 <p className="text-sm text-slate-500">Page {pagination.page} of {pagination.pages} · {pagination.total} records</p>

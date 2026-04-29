@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { usersAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
-const SHIFTS = ['Morning', 'Afternoon', 'Evening', 'Night'];
-const SHIFT_ICONS = { Morning: '🌅', Afternoon: '☀️', Evening: '🌆', Night: '🌙' };
+const SHIFTS = ['Morning', 'Night'];
+const SHIFT_ICONS = { Morning: '🌅', Night: '🌙' };
 
 const emptyForm = { name: '', email: '', password: '', role: 'operator', shift: 'Morning', isActive: true };
 
@@ -19,7 +19,7 @@ export default function UsersPage() {
     try {
       const res = await usersAPI.getAll();
       setUsers(res.data.data);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load users');
     } finally {
       setLoading(false);
@@ -75,48 +75,50 @@ export default function UsersPage() {
       </div>
 
       <div className="card p-0 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th className="table-th">Name</th>
-              <th className="table-th">Email</th>
-              <th className="table-th">Role</th>
-              <th className="table-th">Shift</th>
-              <th className="table-th">Status</th>
-              <th className="table-th">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={6} className="text-center py-12 text-slate-400">Loading...</td></tr>
-            ) : users.map(u => (
-              <tr key={u._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                <td className="table-td font-semibold text-slate-800 dark:text-white">{u.name}</td>
-                <td className="table-td text-slate-500">{u.email}</td>
-                <td className="table-td">
-                  <span className={`badge ${u.role === 'admin' ? 'badge-blue' : 'badge-green'}`}>{u.role}</span>
-                </td>
-                <td className="table-td">
-                  <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300 text-sm">
-                    <span>{SHIFT_ICONS[u.shift] || '🌅'}</span>
-                    <span>{u.shift || 'Morning'}</span>
-                  </span>
-                </td>
-                <td className="table-td">
-                  <span className={`badge ${u.isActive ? 'badge-green' : 'badge-red'}`}>
-                    {u.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="table-td">
-                  <div className="flex gap-2">
-                    <button onClick={() => openEdit(u)} className="text-teal-600 hover:text-teal-800 text-sm font-semibold">Edit</button>
-                    <button onClick={() => handleDelete(u._id)} className="text-red-500 hover:text-red-700 text-sm font-semibold">Delete</button>
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="table-th">Name</th>
+                <th className="table-th">Email</th>
+                <th className="table-th">Role</th>
+                <th className="table-th">Default Shift</th>
+                <th className="table-th">Status</th>
+                <th className="table-th">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={6} className="text-center py-12 text-slate-400">Loading...</td></tr>
+              ) : users.map(u => (
+                <tr key={u._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <td className="table-td font-semibold text-slate-800 dark:text-white">{u.name}</td>
+                  <td className="table-td text-slate-500">{u.email}</td>
+                  <td className="table-td">
+                    <span className={`badge ${u.role === 'admin' ? 'badge-blue' : 'badge-green'}`}>{u.role}</span>
+                  </td>
+                  <td className="table-td">
+                    <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300 text-sm">
+                      <span>{SHIFT_ICONS[u.shift] || '🌅'}</span>
+                      <span>{u.shift || 'Morning'}</span>
+                    </span>
+                  </td>
+                  <td className="table-td">
+                    <span className={`badge ${u.isActive ? 'badge-green' : 'badge-red'}`}>
+                      {u.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="table-td">
+                    <div className="flex gap-2">
+                      <button onClick={() => openEdit(u)} className="text-teal-600 hover:text-teal-800 text-sm font-semibold">Edit</button>
+                      <button onClick={() => handleDelete(u._id)} className="text-red-500 hover:text-red-700 text-sm font-semibold">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {modal && (

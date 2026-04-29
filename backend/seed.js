@@ -14,22 +14,19 @@ const seed = async () => {
   await User.create([
     { name: 'Super Admin', email: 'admin@parchi.com', password: 'admin123', role: 'admin', shift: 'Morning' },
     { name: 'Operator One', email: 'op1@parchi.com', password: 'op123', role: 'operator', shift: 'Morning' },
-    { name: 'Operator Two', email: 'op2@parchi.com', password: 'op123', role: 'operator', shift: 'Evening' },
+    { name: 'Operator Two', email: 'op2@parchi.com', password: 'op123', role: 'operator', shift: 'Night' },
   ]);
 
-  await ParchiType.create([
-    { name: 'Small Parchi', amount: 5, prefix: 'T05', color: '#0d9488', description: '₹5 parking ticket' },
-    { name: 'Medium Parchi', amount: 10, prefix: 'T10', color: '#0891b2', description: '₹10 parking ticket' },
-    { name: 'Large Parchi', amount: 20, prefix: 'T20', color: '#7c3aed', description: '₹20 parking ticket' },
-    { name: 'Premium Parchi', amount: 50, prefix: 'T50', color: '#dc2626', description: '₹50 parking ticket' },
-    { name: 'Special Parchi', amount: 100, prefix: 'T100', color: '#d97706', description: '₹100 parking ticket' },
+  const parchiTypes = await ParchiType.create([
+    { name: 'TWO WHEELER',              amount: 5,   prefix: 'T05', color: '#ffea05', description: '₹5 parking ticket'  },
+    { name: 'THREE WHEELER',            amount: 10,  prefix: 'T10', color: '#0d9488', description: '₹10 parking ticket' },
+    { name: 'FOUR WHEELER',             amount: 20,  prefix: 'T20', color: '#16a34a', description: '₹20 parking ticket' },
+    { name: 'SIX WHEELER / BUS / TRUCK', amount: 100, prefix: 'T50', color: '#f00f9d', description: '₹50 parking ticket' },
   ]);
-
   await MembershipType.create([
-    { name: 'Monthly - 2 Wheeler', amount: 300, durationDays: 30, color: '#0891b2', description: 'Monthly membership for 2-wheelers' },
-    { name: 'Monthly - 4 Wheeler', amount: 500, durationDays: 30, color: '#7c3aed', description: 'Monthly membership for 4-wheelers' },
-    { name: 'Quarterly - 2 Wheeler', amount: 800, durationDays: 90, color: '#0d9488', description: 'Quarterly membership for 2-wheelers' },
-    { name: 'Quarterly - 4 Wheeler', amount: 1400, durationDays: 90, color: '#dc2626', description: 'Quarterly membership for 4-wheelers' },
+    { name: 'Monthly - 2 Wheeler Day Parking Paas', amount: 120,  durationDays: 30, color: '#0891b2', description: 'Monthly membership for 2-wheelers'   },
+    { name: 'Monthly - 4 Wheeler Day Parking Paas', amount: 500,  durationDays: 30, color: '#ed12c5', description: 'Monthly membership for 4-wheelers'   },
+    { name: 'MONTHLY CAR PARKING PAAS 24 HOURS',    amount: 2000, durationDays: 30, color: '#0d9488', description: 'Quarterly membership for 2-wheelers' },
   ]);
 
   console.log('✅ Seeded successfully');
